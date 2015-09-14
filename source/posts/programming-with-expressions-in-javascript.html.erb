@@ -1,0 +1,266 @@
+
+
+<article>
+<h1>Programming With Expressions in JavaScript</h1>
+<h2>~2500 words on 9 lines of code</h2>
+
+<p>Here's a convoluted piece of JavaScript that calculates $5!$ ($5$ <a href="https://en.wikipedia.org/wiki/Factorial" target="_blank">$factorial$</a>):</p>
+
+<pre>
+<code class="language-javascript line-numbers">
+	(function(n) {
+		return (function(fact) {
+			return fact(n, fact);
+		})(function(n, f) {
+		return n === 0 ? 1 :
+						 n > 0 ? n * f(n - 1, f) : 
+						  		 undefined;
+		});
+	})(5); // returns 5! or 120
+</code>
+</pre>
+
+<p>I lifted this code from my outdated version of <a href="https://mitpress.mit.edu/sicp/full-text/book/book-Z-H-4.html#%_toc_start" target="_blank">SICP</a> (exercise 5.39 in the old one) and ported it from Scheme to JavaScript (with some modifications) because I think it's very pretty[1]. Unfortunately I've sent it to a couple of people and received blank expressions all around so this post is going to try to explain what it's doing and why I think that's interesting.</p> 
+
+<p>Having said that it's definitely worth trying to work out what it's doing yourself before you carry on; feel free to stop reading and get on with your day if you do figure it out.</p>
+
+<p>Still here? Good stuff.</p>
+
+<p>You can get the factorial of a number, $n$, by taking all of the numbers between $1$ and $n$ (inclusive) and multiplying them together. For instance:</p>
+
+\begin{equation}
+   5! = 5 \times 4 \times 3 \times 2 \times 1 = 120
+\end{equation}
+
+<p>We can generalise this as:</p>
+
+\begin{equation}
+   n! = n\times(n-1) \times (n-2) \times\ldots \times 2 \times 1
+\end{equation}
+
+<p>notice that if we knock the first multiplicand off of the right hand side we get the factorial of $n-1$</p>
+
+\begin{equation}
+   (n-1) \times (n-2) \times\ldots \times 2 \times 1 = (n-1)!
+\end{equation}
+
+<p>Since this is still a factorial we could remove the first multiplicand from this equation to get $(n-2)!$ and so on for $(n-3)!$, $(n-4)!$ etc. The interesting thing about this is that it allows us to define the function for a factorial in terms of itself:</p>
+
+\begin{equation}
+	n! = n\times(n-1)!
+\end{equation}
+
+<p>... almost. The flaw with this is that when we get to $n=0$ we run into problems. You can't derive $0!$ from $0-1$ so we define $0!$ to be $1$. There's no deep mathematical reason for this as far as I'm aware; you could envisage another definition of factorial where $1!$ is defined to be $1$ and $0!$ is undefined. So it's more a result of convention and convenience than provability.</p>
+
+<p>So we can now come up with a complete[2] definition of the factorial:</p>
+
+\begin{eqnarray}
+  \mbox{n!} = \left\{ 
+    \begin{array}{ll} 
+      1 & \mbox{if } n = 0\\
+      n \times (n-1)! & \mbox{if } n \gt 0
+    \end{array}
+  \right.
+\end{eqnarray}
+
+<p>The nice thing about this is that it's pretty straightforward to implement as a function[3]:</p>
+
+<pre>
+<code class="language-javascript line-numbers">
+	var factorial = function(n) {
+		if (n === 0) {
+			return 1;
+		} else if (n > 0) {
+			return n * factorial(n - 1);
+		}
+	}
+</code>
+</pre>
+
+<p>Since this post is ostensibly about programming with expressions we'll rewrite this using JavaScript's <a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Operators/Conditional_Operator">ternary conditional operator</a>[4]:</p>
+
+<pre>
+<code class="language-javascript line-numbers">
+	var factorial = function(n) {
+		return  n === 0 ? 1 :
+						n * factorial(n - 1);
+	}
+</code>
+</pre>
+
+<p>We're doing this because, unlike the if statement, it's an expression i.e. it returns a value when it's evaluated. A nice way to think about the difference between statements and expressions is to internalise that a statement is a piece of code that does something while an expression is a piece of code that <i>is</i> something.</p>
+
+<p>While you might find this new function to be more elegant (I do at least), it loses the nice behaviour described in [3]. If you give it a negative number it will recur infinitely because n will never equal zero, eventually causing a <a href="https://en.wikipedia.org/wiki/Stack_overflow" target="_blank">stack overflow</a> rather than returning undefined. If you were using this in a real program (and you probably shouldn't[5]) you might well want your program to error when your factorial function is passed a negative number as it was probably a mistake to do so. However, there are <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/throw" target="_blank">more elegant ways</a> of throwing errors in JavaScript than chewing up the whole stack.</p>
+
+<p>Happily with a bit of rejigging we can chain two conditional operators together and get this behaviour back (at the cost of a little bit of elegance):</p>
+
+<pre>
+<code class="language-javascript line-numbers">
+	var factorial = function(n) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * factorial(n - 1) : 
+						  		  undefined;
+	}
+</code>
+</pre>
+
+<p>Despite our pathalogical, and unexplained, drive to remove statements from our code and replace them with expressions we still have two: <i class="code">var</i> and <i class="code">return</i>. Unfortunately there's nothing we can do about the return statement except turn a blind eye to it. In other languages, such as <a href="https://en.wikipedia.org/wiki/Ruby_(programming_language)" target="_blank">Ruby</a> and <a href="https://en.wikipedia.org/wiki/Lisp_(programming_language)" target="_blank">Lisp</a> (from which Ruby takes inspiration), functions return the last expression evaluated. In JavaScript if you want to return anything other than the default return value (<i class="code">undefined</i>) from a function you just have to grit your teeth and use <i class="code">return</i>. </p>
+
+<p>However, we can exorcise <i class="code">var</i>. That's exactly what the code at the top of the page is doing. But as you can probably tell from the muddled structure of that code it's not easy. How come?</p>
+
+<p>JavaScript has two ways of defining a function and we could get rid of <i class="code">var</i> just by using the alternative:</p>
+
+<pre>
+<code class="language-javascript line-numbers">
+	function factorial(n) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * factorial(n - 1) : 
+						  		  undefined;
+	}
+</code>
+</pre>
+
+<p>However the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function">function statement</a> is still a statement so we're not really solving our "problem".</p>
+
+<p>We can, of course, spring an anonymous function into existence by simply declaring a function and not assigning it any name. This is an expression because it returns the function itself (functions are first class objects in JavaScript). However an anonymous function on its own isn't much good to us. We declare an anonymous function when do:</p>
+
+<pre>
+<code class="language-javascript line-numbers">
+	var factorial = function(n) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * factorial(n - 1) : 
+						  		  undefined;
+	}
+</code>
+</pre>
+
+<p>but we use the <i class="code">var</i> statement to catch it and give it a name so we can refer back to it later. If we didn't it would disappear off into the ether before we could do anything useful with it. Another way we can "catch" our anonymous function is to evaluate it as soon as it's been created with <i class="code">([anonymous function])([arguments])</i>[4] like so:</p>
+
+<pre>
+<code class="language-javascript line-numbers">
+	(function(n) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * factorial(n - 1) : 
+						  		  undefined;
+	})(5); // Uncaught ReferenceError: factorial is not defined(...)
+</code>
+</pre>
+
+<p>As you can see from the comment at the end of this code block if you attempt to run this it returns a complaint that the function <i class="code">factorial</i> isn't defined[6]. This makes sense since we've just gotten rid of the <i class="code">var</i> statement that gave the function a name before. But our function relies on calling itself. So how do we call a function from within itself if not by name?</p>
+
+<p>The answer is a little odd: we pass the function to itself as an argument! That way when the code inside the function tries to call itself it knows what the value of itself is, in the same way that it knows what the value of <i class="code">n</i> is when we pass it a value for <i class="code">n</i>. But this introduces a chicken and egg problem. We need to declare the function, but not assign it to a variable (that would require a statement) and then call it while passing it to itself. So we're back to the same problem; no variable declaration: nothing to refer to.</p>
+
+<p>But there is a trick that will get us out of our tight spot; it turns out what we need is another function. A function whose purpose is to call other functions:</p>
+
+<pre><code class="language-javascript line-numbers">
+	var modifiedFactorial = function(n, f) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * f(n - 1, f) : 
+						  		  undefined;
+	}
+	
+	var functionRunner = function(func, arg) {
+		return func(arg, func);
+	}
+	
+	functionRunner(modifiedFactorial, 5); // 120
+</code></pre>
+
+<p>There's a fair bit going on here so, for now, I've broken our rule (no satements) and included variable definitions to make the code easier to understand. We've called our function that runs functions <i class="code">functionRunner</i> (unimaginatively enough). It's not very complicated; it takes two arguments, a function to run, which it calls <i class="code">func</i>, and an argument for that function, which it calls <i class="code">arg</i>, and then it calls <i class="code">func</i> with <i class="code">arg</i> <i>and</i> <i class="code">func</i> as arguments and returns the value that <i class="code">func</i> returns.</p>
+
+<p>That <i class="code">functionRunner</i> calls <i class="code">func</i> with <i class="code">arg</i> as an argument shouldn't be too surprising, the interesting bit is that <i class="code">func</i> is also an argument. For this to work as it's intended we've had to modify our factorial function, hence its new name <i class="code">modifiedFactorial</i>. The change we've made here is that where it used to take one argument, <i class="code">n</i>, it now expects two, <i class="code">n</i> and <i class="code">f</i>. We've also replaced the call to <i class="code">factorial</i>, which broke our function before because it wasn't defined, with a call to <i class="code">f</i> and it now knows what <i class="code">f</i> is because we passed it to <i class="code">modifiedFactorial</i> as an argument. The clever bit is that, because we passed <i class="code">modifiedFactorial</i> to itself when we called it in <i class="code">functionRunner</i>, <i class="code">f</i> is <i class="code">modifiedFactorial</i> itself. Which means our function now recur again!</p>
+
+<p>This may seem like a convoluted way of going about things considering that a few code snippets ago our function was able to recur just fine without being called by another function. But remember the variable declarations in this code snippet are only here for clarity and if we start taking them out we find that our function still works just fine! First let's get rid of the <i class="code">var</i> declaration for <i class="code">functionRunner</i> so that it's just declared as an anonymous function. If we then wrap this function in parentheses we can call it immediately by appending another pair of parentheses containing the arguments we want to pass to it:</p>
+
+<pre><code class="language-javascript line-numbers">
+	var modifiedFactorial = function(n, f) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * f(n - 1, f) : 
+						  		  undefined;
+	};
+
+	(function(func, arg) {
+		return func(arg, func);
+	})(modifiedFactorial, 5); // 120
+</code></pre>
+
+<p>One statement down; one to go. We can use a similar trick to get rid of <i class="code">modifiedFactorial</i> too by declaring it as an anonymous function inside the parentheses that call the function formerly known as <i class="code">functionRunner</i>:</p>
+
+<pre><code class="language-javascript line-numbers">
+	(function(func, arg) {
+		return func(arg, func);
+	})(function(n, f) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * f(n - 1, f) : 
+						  		  undefined;
+	}, 5); // 120
+</code></pre>
+
+<p>And there we have it. As long as you ignore the awkward <i class="code">return</i> statements JavaScript forces us to use we've managed to calculate the factorial of a number using expressions alone.</p>
+
+<p>We're not quite where we wanted to be yet though. Notice that in our original expression the last set of parentheses, the pair that calls the rest of the expression, contains just <i class="code">5</i> on its own. Whereas the last set of parentheses in our current expression, contains <i class="code">5</i> <i>and</i> a big anonymous function, the function formerly known as <i class="code">modifiedFactorial</i>. I hope you'll agree that the original version is more elegant. If we want to use this code to calculate factorials then the last set of parentheses (the bit with the <i class="code">5</i> in it) is the only bit we really care about. We can replace our <i class="code">5</i> with another number, a <i class="code">3</i> or a <i class="code">20</i> and get the factorial of that instead so it's nice that in the original code there is a clear separation between how we calculate a factorial (the bit in the first pair of parentheses) and what we are calculating the factorial of (the bit in the second pair).</p>
+
+<p>To get from where we are now to where we want to be requires the use of a technique called currying[7]. Currying is where you take a function that takes multiple arguments, which we'll call the inner function, and wrap it in another function, which we'll call the outer function, such that the outer function needs to take only one argument to evaluate the inner function and return its return value. Here's a very basic example:</p>
+
+<pre><code class="language-javascript line-numbers">
+	var adder = function(x, y) {
+		return x + y;
+	}
+
+	console.log( adder(1, 2) ); // 3
+
+	// We curry adder to produce a function that adds 3 
+	// to everything we pass to it.
+	var add3 = function(x) {
+		return adder(3, x);
+	}
+
+	console.log( add3(4) ); // 7
+</code></pre>
+
+<p>It might now be worth attempting to curry our current factorial expression yourself before reading on to see if you can get to the expression at the top of the page. The transformation is fairly straightforward. In a nutshell we replace the number 5 at the end of the expression with an <i class="code">n</i> then we wrap this in a function that takes an argument <i class="code">n</i> and returns our original expression:</p>
+
+<pre><code class="language-javascript line-numbers">
+	var curriedFactorial = function(n) {
+		return (function(func, arg) {
+			return func(arg, func);
+		})(function(n, f) {
+			return  n === 0 ? 1 :
+							  n > 0 ? n * f(n - 1, f) : 
+							  		  undefined;
+		}, n);
+	}
+
+	curriedFactorial(5); // 5
+</code></pre>
+
+<p>Again I've named our new wrapper function using <i class="code">var</i> for clarity but we can easily get rid of this by wrapping the anonymous declaration of <i class="code">curriedFactorial</i> in parens and evaluating straight away:</p>
+
+<pre><code class="language-javascript line-numbers">
+	(function(n) {
+		return (function(func, arg) {
+			return func(arg, func);
+		})(function(n, f) {
+			return  n === 0 ? 1 :
+							  n > 0 ? n * f(n - 1, f) : 
+							  		  undefined;
+		}, n)
+	})(5); // returns 5! or 120
+</code></pre>
+
+<p>and with that we're <i>finally</i> back to where we started. If you had fun you might want to read up on <a href="https://en.wikipedia.org/wiki/Lambda_calculus">lambda calculus</a> (<a href="http://www.cs.virginia.edu/~cs655/readings/mockingbird.html" target="_blank">this resource</a> is particularly good) I believe the technique of making a function recur without having to define it was pinched from there. I'd like to write a follow up blog post clarifying how what we've discussed can be related to lambda calculus but time and motivation will be impedements. Most importantly the link between this and lambda calculus is at the limits of my understanding so I'll need to do a lot more reading before I can go ahead. If you come across a second blog post, you'll know I've been working hard.</p>
+
+<ol class="footnotes">
+	<li>It's a bit prettier and a bit more semantic in Scheme in my opinion but JavaScript is my first language and certainly has a wider audience than Scheme at the moment. Plus you can fiddle about with it from the comfort of your <a href="http://wickedlysmart.com/hfjsconsole/" target="_blank">browser console</a>.</li>
+	<li>OK, we should really be limiting ourselves to real, non-negative integers.</li>
+	<li>Notice that in our definition of factorial $(5)$ $n!$ is undefined for $n \lt 0$. Handily, in our factorial function, if n is neither equal to zero nor greater than zero then no return statement is executed. In JavaScript if a function doesn't explicitly return anything it still needs to return something, so it returns a default value. The value undefined!</li>
+	<li>You have to put your annonymous function in parens before passing your arguments to it for evaluation. Appending parens to the end of the curly braces doesn't work; I don't see any reason why it wouldn't have been possible to have implemented JavaScript the other way but it wasn't, and we're stuck with it, and it's not that bad.</li>
+	<li>The reason for this is that it uses a recursive algorithm rather than an iterative algorithm to calculate the factorial. The amount of memory needed by this algorithm will scale in proportion to the size of the number whose factorial is being calculated; whereas a similarly simple iterative algorithm will requires a fixed amount of memory regardless of the size of the factorial we are calculating. For an insightful discussion of iterative vs recursive algorithms see <a href="">here</a> but be aware that this reference uses Scheme, which has <a href="https://en.wikipedia.org/wiki/Tail_call" target="_blank">tail call optimisation</a> and so you may still end up with a recursive algorithm if you port iterative examples straight to JavaScript. Handily though the latest version of JavaScript, <a href="https://github.com/lukehoban/es6features" target="_blank">ECMAScript 2015</a>, does have tail call optimisation; writing a short program that makes the <a href="https://babeljs.io/repl/" target="_blank">babel transpiler</a> use tail call optimisation is a fun exercise and it's interesting to see how the transpiler implements it.</li>
+	<li>This will only happen in an environment where factorial hasn't previously been defined so if you're following along make sure to clear your environment, e.g. refresh your page if you're using the browser console.</li>
+	<li>Named after the mathematician and logician <a href="https://en.wikipedia.org/wiki/Haskell_Curry" target="_blank">Haskell Curry</a> after whom the programming language <a href="https://www.haskell.org/" target="_blank">Haskell</a> is also named. Haskell is adored by language wonks for its functional purity and powerful type system but it's <a href="https://xkcd.com/1312/" target="_blank">often passed over</a> as a language choice because it can seem a little alien to new users.</li>
+</ol>
+</article>
+
+
+
+

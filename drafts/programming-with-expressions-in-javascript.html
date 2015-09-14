@@ -1,0 +1,160 @@
+
+
+<h1>Programming with Expressions in Javascript</h1>
+
+Here's a convoluted piece of Javascript that calculates 5! (5 <a href="https://en.wikipedia.org/wiki/Factorial">factorial</a>),or x! if you replace the last "5" with x:
+
+<blockquote>
+	(function(n) {
+		return (function(fact) {
+			return fact(n, fact);
+		})(function(n, f) {
+		return n === 0 ? 1 :
+						  n > 0 ? n * f(n - 1, f) : 
+						  		  undefined;
+		});
+	})(5); // returns 5! or 120
+</blockquote>
+
+I lifted this code from my outdated version of <a href="">SICP</a> (exercise 5.39 in my version) and ported it from Scheme to Javascript because I think it's very pretty*. Unfortunately I've sent it to a couple of people and received blank expressions all around so this post is going to try to explain what it's doing and why I think that's interesting. 
+
+It's definitely worth trying to work out what it's doing yourself before you carry on; feel free to stop reading and get on with your day if you do figure it out.
+
+Still here? Good stuff. 
+
+You can get the factorial of a number, n, by taking all of the numbers between 1 and n (inclusive) and multiplying them together. For instance:
+
+5! = 5*4*3*2*1 = 120
+(1)
+
+We can generalise this as:
+
+n! = n * (n-1) * (n-2) *... * 2 * 1
+(2)
+
+if we knock the first multiplicand off of the right hand side we get the factorial of n-1
+
+(n-1) * (n-2) *... * 2 * 1 = (n-1)!
+(3)
+
+Since this is still a factorial we could remove the first multiplicand from this equation to get (n-2)! and so on for n-3, n-4 etc. The interesting thing about this is that it allows us to define the function for a factorial in terms of itself:
+
+n! = n*(n-1)!
+(4)
+
+... almost. The flaw with this is that when we get to n=0 we run into problems. You can't derive 0! from 0-1 so we define 0! to be 1. There's no deep mathematical reason for this as far as I'm aware; it's a result of <a href="http://math.stackexchange.com/search?tab=relevance&q=zero%20factorial">convention rather than provability</a>.
+
+So we now have a complete[2] definition of the factorial:
+
+n! = 1 		if n = 0
+	 (n-1)!*n if n &gt; 0
+(5)
+
+The nice thing about this is that it's pretty straightforward to implement as a function:
+
+<blockquote>
+	var factorial = function(n) {
+		if (n === 0) {
+			return 1;
+		} else if (n > 0) {
+			return n * factorial(n - 1);
+		}
+	}
+</blockquote>
+
+Since this post is ostensibly about programming with expressions we'll rewrite this using Javascript's <a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Operators/Conditional_Operator">ternary conditional operator</a>[4]:
+
+<blockquote>
+	var factorial = function(n) {
+		return  n === 0 ? 1 :
+						n * factorial(n - 1);
+	}
+</blockquote>
+
+Because, unlike the if statement, it's an expression i.e. it returns a value when it's evaluated. A nice way to think about the difference between statements and expressions is to internalise that a statement is a piece of code that does something while an expression is a piece of code that <i>is</i> something.
+
+While you might find this new function to be more elegant (I do at least), it loses the nice behaviour described in [3]. If you give it a negative number it will recur infinitely because n will never equal zero, eventually causing a <a href="https://en.wikipedia.org/wiki/Stack_overflow">stack overflow</a> rather than returning undefined. If you were using this in a real program (which you shouldn't, for reasons I'll get to later) you might well want your program to error when your factorial function is passed a negative number as it was probably a mistake to do so. However, there are <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/throw">more elegant ways</a> of throwing errors in Javascript than chewing up the whole stack.
+
+Happily with a bit of rejigging we can chain two conditional operators together and get this behaviour back (at the cost of a little bit of elegance):
+
+<blockquote>
+	var factorial = function(n) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * factorial(n - 1) : 
+						  		  undefined;
+	}
+</blockquote>
+
+Despite our pathalogical, and unexplained, drive to remove statements from our code and replace them with expressions we still have two: var and return. Unfortunately there's nothing we can do about the return statement except turn a blind eye to it. In other languages, such as Ruby and lisp (from which Ruby takes inspiration), functions return the last expression evaluated. In JavaScript if you want to return anything other than the default return value (undefined) from a function you just have to grit your teeth and use return. 
+
+However, we can exorcise var. That's exactly what the code at the top of the page is doing. But as you can probably tell from the muddled structure of that code it's not easy. How come?
+
+Javascript has two ways of defining a function and we could get rid of var just by using the alternative:
+
+<blockquote>
+	function factorial(n) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * factorial(n - 1) : 
+						  		  undefined;
+	}
+</blockquote>
+
+However the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function">function statement</a> is still a statement so we're not really solving our "problem".
+
+We can, of course, spring an anonymous function into existence by simply declaring a function and not assigning it any name. This is an expression because it returns the function itself (functions are first class objects in JavaScript). However an anonymous function on its own isn't much good to us. We declare an anonymous function when do:
+
+<blockquote>
+	var factorial = function(n) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * factorial(n - 1) : 
+						  		  undefined;
+	}
+</blockquote>
+
+but we use the var statement to catch it and give it a name so we can refer back to it later before it disappears off into the ether. Another way we can "catch" our anonymous function is to evaluate it as soon as it's been created with ([anonymous function])([arguments])[4] like so:
+
+<blockquote>
+	(function(n) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * factorial(n - 1) : 
+						  		  undefined;
+	})(5); // Uncaught ReferenceError: factorial is not defined(â€¦)
+</blockquote>
+
+As you can see from the comment at the end of this code block if you attempt to run this it returns a complaint that the function "factorial" isn't defined[5]. This makes sense since we've just gotten rid of the var statement that gave the function a name before. But our function does have to call itself. So how do we call a function from within itself if not by name?
+
+The answer is that we do give it a name, but without declaring a variable with a var statement. What we need is a function that runs functions:
+
+<blockquote>
+	var modifiedFactorial = function(n, f) {
+		return  n === 0 ? 1 :
+						  n > 0 ? n * f(n - 1, f) : 
+						  		  undefined;
+	}
+
+	var functionRunner = function(func, arg) {
+		return func(arg, func);
+	}
+
+	functionRunner(modifiedFactorial, 5); // 120
+</blockquote>
+
+There's a fair bit going on here so I've included variable definitions for the time being to make it easier to see what's going on. Because functions are first class objects in JavaScript we can pass them around as arguments to other functions like any other object. So functionRunner takes a function you want to run and runs it for you. You can pass arguments to functionRunner and functionRunner in turn will pass them on to func, the function it's running.
+
+The function we pass to functionRunner is modifiedFactorial which, as the name suggests, is a modified version of our factorial function from before. It's been modified to take a second argument, f, which should be a function. The recursive call to factorial, from earlier versions, has been replaced with a call to the function f, which is passed to modifiedFactorial as one of its arguments.
+
+
+
+Remember to point out that return is a statement!
+Remember to explain how to follow along in the browser console.
+Explain at the beginning that the function has been modified as well as ported.
+
+[1] It's a bit prettier and a bit more semantic in Scheme in my opinion but Javascript is my first language and certainly has a wider audience than Scheme at the moment. Plus you can fiddle about with it from the comfort of your <a href="">browser console</a>
+
+[2] OK, we should really be limiting ourselves to real, non-negative integers.
+
+[3] Notice that in our definition of factorial (5) n! is undefined for n &lt; 0. Handily, in our factorial function, if n is neither equal to zero nor greater than zero then no return statement is executed. In Javascript if a function doesn't explicitly return anything it still needs to return something, so it returns a default value. The value undefined!
+
+[4] You have to put your annonymous function in parens before passing your arguments to it for evaluation. Appending parens to the end of the curly braces doesn't work; I don't see any reason why it wouldn't have been possible to have implemented JavaScript the other way but it wasn't and we're stuck with it and it's not that bad.
+
+[5] This will only happen in an environment where factorial hasn't previously been defined so if you're following along make sure to clear your environment, e.g. refresh your page if you're using the browser console.
