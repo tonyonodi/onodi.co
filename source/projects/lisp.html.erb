@@ -1,0 +1,77 @@
+---
+title: A Lisp Interpreter in JavaScript
+---
+<main class="lisp-project">
+  <article class="lisp-text">
+    <h1>A Lisp Interpreter in JavaScript</h1>
+    <h3>4th November 2015</h3>
+    <div class="lisp-repl"></div>
+    <p><a href="https://github.com/tonyonodi/LISP1k" target="_blank">View Source on GitHub.</a></p>
+
+    <h2>What can it do?</h2>
+
+    <p>Have a go at writing some basic programs, one line at a time. You can do arithmetic:</p>
+
+    <code class="language-scheme">(+ 1 1)</code>
+
+    <p>nest expressions: </p>
+
+    <code class="language-scheme">(* 2 (+ 5 5))</code>
+
+    <p>branch conditionally</p>
+
+    <code class="language-scheme">(if (= 1 1) true false)</code>
+
+    <p>save variables: </p>
+
+    <code class="language-scheme">(def x 5)</code>
+
+    <p>and even define functions that call themselves recursively!: </p>
+
+    <code class="language-scheme">(def factorial (fn (n) (if (= n 0) 1 (* n (factorial (- n 1))))))</code>
+
+    <p>To call that last one try</p>
+
+    <code class="language-scheme">(factorial 5)</code>
+
+    <h2>Where did this come from?</h2>
+
+    <p>This was originally meant to be a <a href="http://js1k.com/">JS1K</a> entry (hence the now outdated name). But I quickly decided it was a pretty poor fit for the competition - being greeted with a blinking REPL cursor when you open the page isn't nearly whizz-bang enough - and began writing a raytracer instead. And failed at that too.</p>
+
+    <p>Prior to that I'd been wanting to write a Lisp interpreter since reading <a href="http://norvig.com/lispy.html" target="_blank">Peter Norvig's essay</a> on writing one in Python and <a href="http://www.michaelnielsen.org/ddi/lisp-as-the-maxwells-equations-of-software/" target="_blank">Michael Nielsen's sort-of follow up essay</a> on Lisp as the Maxwell's equations of software.</p>
+
+    <p>I say I read them, I actually started reading them both and promptly stopped so I could try to work out how to write one for myself... Then I went back to Peter Norvig's essay to peak at the parser and implement a copy in JavaScript (parsers are hard).</p>
+
+    <p>Anyway, the rest is my best guess (and therefore questionable implementation) of how a Lisp interpreter should work. The project structure is a real mess at the moment and you can only feed it commands one line at a time... and if you try to do them over more than one line it might crash your browser.</p>
+
+    <p>Anyway, enjoy!</p>
+
+    <h2>To Do List</h2>
+
+    <p>This to do list <a href="http://steve-yegge.blogspot.co.uk/2007/06/rich-programmer-food.html" target="_blank">could easily be infinite</a> but these are a few things I see on the horizon.</p>
+
+    <ul>
+      <li>Full write up on how this works.</li>
+      <li>A proper stack.</li>
+      <li>Automated builds with ES6 compilation.</li>
+      <li>Support for closures.</li>
+      <li>Strings!</li>
+      <li>Error handling.</li>
+      <li>Tail call optimisation.</li>
+      <li>Implementation of cons/car/cdr.</li>
+      <li>Some nice (ideally immutable) data structures. One day...</li>
+    </ul>
+  </article>
+</main>
+
+<%= stylesheet_link_tag "lisp" %>
+<%= javascript_include_tag "jquery-2.1.4.min" %>
+<%= javascript_include_tag "lisp1k-1.0.0" %>
+<script type="text/javascript">
+// Expects an element to which it should be appended.
+  var parent,
+    myRepl;
+
+  parent = $(".lisp-repl");
+  myRepl = new Lisp.repl(parent);
+</script>

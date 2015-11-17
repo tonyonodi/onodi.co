@@ -15,14 +15,14 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 			return fact(n, fact);
 		})(function(n, f) {
 		return n === 0 ? 1 :
-						 n > 0 ? n * f(n - 1, f) : 
+						 n > 0 ? n * f(n - 1, f) :
 						  		 undefined;
 		});
 	})(5); // returns 5! or 120
 </code>
 </pre>
 
-<p>I lifted this code from my outdated version of <a href="https://mitpress.mit.edu/sicp/full-text/book/book-Z-H-4.html#%_toc_start" target="_blank">SICP</a> (exercise 5.39 in the old one) and ported it from Scheme to JavaScript (with some modifications) because I think it's very pretty[1]. Unfortunately I've sent it to a couple of people and received blank expressions all around so this post is going to try to explain what it's doing and why I think that's interesting.</p> 
+<p>I lifted this code from my outdated version of <a href="https://mitpress.mit.edu/sicp/full-text/book/book-Z-H-4.html#%_toc_start" target="_blank">SICP</a> (exercise 5.39 in the old one) and ported it from Scheme to JavaScript (with some modifications) because I think it's very pretty[1]. Unfortunately I've sent it to a couple of people and received blank expressions all around so this post is going to try to explain what it's doing and why I think that's interesting.</p>
 
 <p>Having said that it's definitely worth trying to work out what it's doing yourself before you carry on; feel free to stop reading and get on with your day if you do figure it out.</p>
 
@@ -57,8 +57,8 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 <p>So we can now come up with a complete[2] definition of the factorial:</p>
 
 \begin{eqnarray}
-  \mbox{n!} = \left\{ 
-    \begin{array}{ll} 
+  \mbox{n!} = \left\{
+    \begin{array}{ll}
       1 & \mbox{if } n = 0\\
       n \times (n-1)! & \mbox{if } n \gt 0
     \end{array}
@@ -100,7 +100,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 <code class="language-javascript line-numbers">
 	var factorial = function(n) {
 		return  n === 0 ? 1 :
-						  n > 0 ? n * factorial(n - 1) : 
+						  n > 0 ? n * factorial(n - 1) :
 						  		  undefined;
 	}
 </code>
@@ -116,7 +116,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 <code class="language-javascript line-numbers">
 	function factorial(n) {
 		return  n === 0 ? 1 :
-						  n > 0 ? n * factorial(n - 1) : 
+						  n > 0 ? n * factorial(n - 1) :
 						  		  undefined;
 	}
 </code>
@@ -130,7 +130,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 <code class="language-javascript line-numbers">
 	var factorial = function(n) {
 		return  n === 0 ? 1 :
-						  n > 0 ? n * factorial(n - 1) : 
+						  n > 0 ? n * factorial(n - 1) :
 						  		  undefined;
 	}
 </code>
@@ -142,7 +142,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 <code class="language-javascript line-numbers">
 	(function(n) {
 		return  n === 0 ? 1 :
-						  n > 0 ? n * factorial(n - 1) : 
+						  n > 0 ? n * factorial(n - 1) :
 						  		  undefined;
 	})(5); // Uncaught ReferenceError: factorial is not defined(...)
 </code>
@@ -157,14 +157,14 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 <pre><code class="language-javascript line-numbers">
 	var modifiedFactorial = function(n, f) {
 		return  n === 0 ? 1 :
-						  n > 0 ? n * f(n - 1, f) : 
+						  n > 0 ? n * f(n - 1, f) :
 						  		  undefined;
 	}
-	
+
 	var functionRunner = function(func, arg) {
 		return func(arg, func);
 	}
-	
+
 	functionRunner(modifiedFactorial, 5); // 120
 </code></pre>
 
@@ -177,7 +177,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 <pre><code class="language-javascript line-numbers">
 	var modifiedFactorial = function(n, f) {
 		return  n === 0 ? 1 :
-						  n > 0 ? n * f(n - 1, f) : 
+						  n > 0 ? n * f(n - 1, f) :
 						  		  undefined;
 	};
 
@@ -193,7 +193,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 		return func(arg, func);
 	})(function(n, f) {
 		return  n === 0 ? 1 :
-						  n > 0 ? n * f(n - 1, f) : 
+						  n > 0 ? n * f(n - 1, f) :
 						  		  undefined;
 	}, 5); // 120
 </code></pre>
@@ -211,7 +211,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 
 	console.log( adder(1, 2) ); // 3
 
-	// We curry adder to produce a function that adds 3 
+	// We curry adder to produce a function that adds 3
 	// to everything we pass to it.
 	var add3 = function(x) {
 		return adder(3, x);
@@ -228,7 +228,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 			return func(arg, func);
 		})(function(n, f) {
 			return  n === 0 ? 1 :
-							  n > 0 ? n * f(n - 1, f) : 
+							  n > 0 ? n * f(n - 1, f) :
 							  		  undefined;
 		}, n);
 	}
@@ -244,7 +244,7 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 			return func(arg, func);
 		})(function(n, f) {
 			return  n === 0 ? 1 :
-							  n > 0 ? n * f(n - 1, f) : 
+							  n > 0 ? n * f(n - 1, f) :
 							  		  undefined;
 		}, n)
 	})(5); // returns 5! or 120
@@ -263,6 +263,11 @@ title: Recursion With Anonymous Functions in JavaScript | Tony Onodi
 </ol>
 </article>
 
-
-
-
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+		tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+		TeX: { equationNumbers: { autoNumber: "AMS" } }
+	});
+</script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<%= javascript_include_tag  "prism" %>

@@ -1,0 +1,47 @@
+#lisp-repl {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: 100%;
+  margin-top: 0;
+  background: #282c34;
+  color: #abad9c;
+  font-family: monospace;
+}
+
+#lisp-repl input {
+  background: none;
+  border: none;
+  color: #abad9c;
+  font-family: monospace;
+}
+
+#lisp-repl input:focus {
+  outline: 0;
+}
+
+#lisp-repl .input-form form label {
+  float: left;
+  width: 35px;
+  margin-left: -35px;
+}
+
+#lisp-repl .input-form form input {
+  width: 100%;
+  font-size: 1em;
+}
+
+#lisp-repl li {
+  list-style-type: none;
+}
+
+#lisp-repl li.input {
+  margin-left: -35px;
+}
+
+#lisp-repl li.input:before {
+  content: ">>> ";
+}
+
+#lisp-repl li.output {
+  margin-left: -35px;
+}
